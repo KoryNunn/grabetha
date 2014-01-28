@@ -1,0 +1,19 @@
+{
+  "name": "grabetha",
+  "version": "0.0.0",
+  "description": "",
+  "main": "grabetha.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD",
+  "devDependencies": {
+    "watchify": "~0.5.4"
+  },
+  "dependencies": {
+    "doc-js": "~0.4.2",
+    "interact-js": "~0.4.5",
+    "venfix": "0.0.2"
+  }
+}
