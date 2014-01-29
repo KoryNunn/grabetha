@@ -303,6 +303,7 @@ function isUndefined(arg) {
 },{}],2:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter,
     doc = require('doc-js'),
+    venfix = require('venfix'),
     interact = require('interact-js');
 
 var droppables = [];
@@ -314,16 +315,28 @@ function checkElementLocation(element, position){
         boundingRect.top < position.y && boundingRect.top + boundingRect.height > position.y;
 }
 
-function triggerDrop(grabbable, position){
+function emitDroppableEvent(event, grabbable, position){
     var droppable,
         targets;
     for(var i = 0; i < droppables.length; i++) {
         droppable = droppables[i];
-        targets = doc(droppable.delegate).find(droppable.selector);
+        targets;
+
+        if(typeof droppable.selector === 'string'){
+            targets = doc(droppable.delegate).find(droppable.selector);
+        }else{
+            if(doc(droppable.selector).closest(droppable.delegate)){
+                targets = [droppable.selector];
+            }
+        }
 
         for(var j = 0; j < targets.length; j++) {
             if(checkElementLocation(targets[i], position)){
-                droppable._drop(grabbable, targets[i]);
+                droppable._emit(event, {
+                    target: targets[i],
+                    grabbable: grabbable,
+                    position: position
+                });
             }
         }
     }
@@ -339,25 +352,10 @@ function getterSetter(get, set){
     };
 }
 
-function createGhost(element){
-    var style = window.getComputedStyle(element),
-        ghost = element.cloneNode(true);
-
-    for(var key in style) {
-        ghost.style[key] = style[key];
-    }
-
-    ghost.style.position = 'absolute';
-    ghost.style.opacity = '0.5';
-    ghost.style.top = '0';
-    ghost.style.left = '0';
-
-    return ghost;
-}
-
-function Grab(target, interaction){
+function Grab(grabbable, target, interaction){
     var targetRects = target.getBoundingClientRect();
     this.target = target;
+    this.grabbable = grabbable;
 
     this.targetOffset = {
         x: targetRects.left - interaction.pageX,
@@ -386,6 +384,7 @@ Grab.prototype.position = getterSetter(
         this._position.x = position.x;
         this._position.y = position.y;
         this.emit('move', this.position());
+        emitDroppableEvent('hover', this.grabbable, this.position());
     }
 );
 
@@ -416,14 +415,14 @@ Grabbable.prototype.init = function(){
 };
 Grabbable.prototype._start = function(interaction){
     var grabbable = this,
-        target = interaction.getActualTarget();
+        target = interaction.target;
 
     if(!doc(target).is(grabbable.selector)){
         return;
     }
 
     this.target = target;
-    this.currentGrab = new Grab(target, interaction);
+    this.currentGrab = new Grab(this, target, interaction);
 
     return this;
 };
@@ -462,15 +461,39 @@ Grabbable.prototype._end = function(interaction){
 
     if(this.grabStarted){
         this.emit('drop', this.currentGrab.position());
-        triggerDrop(this, this.currentGrab.position());
+        emitDroppableEvent('drop', this, this.currentGrab.position());
     }
 
-    this.target = null;
-    this.currentGrab = null;
-    this.grabStarted = null;
+    delete this.target;
+    delete this.currentGrab;
+    delete this.grabStarted;
 
     return this;
-};
+}
+Grabbable.prototype.createGhost = function(element){
+    element = element || this.target;
+    var ghost = element.cloneNode(true),
+        grab = this.currentGrab;
+
+    ghost.style.cssText = document.defaultView.getComputedStyle(element, '').cssText;
+
+    ghost.style.position = 'absolute';
+    ghost.style.opacity = '0.5';
+    ghost.style.top = '0';
+    ghost.style.left = '0';
+
+    grab.on('move', function(position){
+        ghost.style[venfix('transform')] = 'translate3d(' + (grab.targetOffset.x + position.x) + 'px,' + (grab.targetOffset.y + position.y) + 'px,0)'
+    });
+
+    ghost.destroy = function(){
+        ghost.parentNode.removeChild(ghost);
+    };
+
+    document.body.appendChild(ghost);
+
+    return ghost;
+}
 
 function grabbable(delegate, selector){
     var instance = Object.create(Grabbable.prototype);
@@ -502,16 +525,14 @@ Droppable.prototype.init = function(){
         return;
     }
 };
-Droppable.prototype._drop = function(grabbable, target){
-    this.emit('drop', {
-        grabbable: grabbable,
-        target: target
-    });
-};
 Droppable.prototype.destroy = function(){
     var dropableIndex = droppables.indexOf(this);
 
     droppables.splice(dropableIndex, 1);
+};
+Droppable.prototype._emit = function(event, details){
+
+    this.emit(event, details);
 };
 
 function droppable(delegate, selector){
@@ -523,12 +544,9 @@ function droppable(delegate, selector){
 
 module.exports = {
     grabbable: grabbable,
-    droppable: droppable,
-    createGhost: createGhost
+    droppable: droppable
 };
-
-
-},{"doc-js":4,"events":1,"interact-js":8}],3:[function(require,module,exports){
+},{"doc-js":4,"events":1,"interact-js":8,"venfix":9}],3:[function(require,module,exports){
 var arrayProto = [],
     isList = require('./isList');
     getTargets = require('./getTargets'),
@@ -1230,9 +1248,18 @@ Interact.prototype.removeListener = function(eventName, target, callback){
 };
 interact = new Interact();
 
-function getActualTarget() {
     // For some reason touch browsers never change the event target during a touch.
     // This is, lets face it, fucking stupid.
+function getActualTarget() {
+    var scrollX = window.scrollX,
+        scrollY = window.scrollY;
+
+    // IE is stupid and doesn't support scrollX/Y
+    if(scrollX === undefined){
+        scrollX = document.body.scrollLeft;
+        scrollY = document.body.scrollTop;
+    }
+
     return document.elementFromPoint(this.pageX - window.scrollX, this.pageY - window.scrollY);
 }
 
@@ -1585,36 +1612,43 @@ function logEvent(event){
     console.log(event);
 }
 
-var grabetha = require('./grabetha'),
-    venfix = require('venfix');
+var grabetha = require('./grabetha');
 
-var grabbableStuff = grabetha.grabbable('.things .stuff');
-
-grabbableStuff
+var grabbableStuff = grabetha.grabbable('.things .stuff')
     .on('grab', function(grab){
         var startPosition = grab.position(),
-            clone = grabetha.createGhost(this.target);
+            ghost = this.createGhost();
 
-        this.clone = clone;
-
-        document.body.appendChild(clone);
-
-        grab.on('move', function(position){
-            // grab.position({
-            //     x: position.x,
-            //     y: startPosition.y
-            // });
-            clone.style[venfix('transform')] = 'translate3d(' + (this.targetOffset.x + position.x) + 'px,' + (this.targetOffset.y + position.y) + 'px,0)'
-        });
+        this.ghost = ghost;
     })
     .on('drop', function(position){
-        this.clone.parentNode.removeChild(this.clone);
-        this.clone = null
+        this.ghost.destroy();
+        this.ghost = null
+    });
+
+
+var dropArea = grabetha.droppable('.majigger')
+    .on('hover', function(details){
+        if(details.grabbable === grabbableStuff){
+            console.log('grabbable stuff');
+        }else{
+            console.log('other stuff');
+        }
     })
+    .on('drop', logEvent);
 
+var elm = document.createElement('div');
+elm.textContent = 'Bla';
 
-var dropArea = grabetha.droppable('.majigger');
+grabetha.grabbable(elm).on('grab', function(){
+    this.ghost = this.createGhost();
+}).on('drop', function(){
+    this.ghost.destroy();
+});
 
-dropArea
-    .on('hover', logEvent).on('drop', logEvent);
-},{"./grabetha":2,"venfix":9}]},{},[10])
+window.onload = function(){
+
+    document.body.appendChild(elm);
+
+};
+},{"./grabetha":2}]},{},[10])

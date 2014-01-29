@@ -2,35 +2,42 @@ function logEvent(event){
     console.log(event);
 }
 
-var grabetha = require('./grabetha'),
-    venfix = require('venfix');
+var grabetha = require('./grabetha');
 
-var grabbableStuff = grabetha.grabbable('.things .stuff');
-
-grabbableStuff
+var grabbableStuff = grabetha.grabbable('.things .stuff')
     .on('grab', function(grab){
         var startPosition = grab.position(),
-            clone = grabetha.createGhost(this.target);
+            ghost = this.createGhost();
 
-        this.clone = clone;
-
-        document.body.appendChild(clone);
-
-        grab.on('move', function(position){
-            // grab.position({
-            //     x: position.x,
-            //     y: startPosition.y
-            // });
-            clone.style[venfix('transform')] = 'translate3d(' + (this.targetOffset.x + position.x) + 'px,' + (this.targetOffset.y + position.y) + 'px,0)'
-        });
+        this.ghost = ghost;
     })
     .on('drop', function(position){
-        this.clone.parentNode.removeChild(this.clone);
-        this.clone = null
+        this.ghost.destroy();
+        this.ghost = null
+    });
+
+
+var dropArea = grabetha.droppable('.majigger')
+    .on('hover', function(details){
+        if(details.grabbable === grabbableStuff){
+            console.log('grabbable stuff');
+        }else{
+            console.log('other stuff');
+        }
     })
+    .on('drop', logEvent);
 
+var elm = document.createElement('div');
+elm.textContent = 'Bla';
 
-var dropArea = grabetha.droppable('.majigger');
+grabetha.grabbable(elm).on('grab', function(){
+    this.ghost = this.createGhost();
+}).on('drop', function(){
+    this.ghost.destroy();
+});
 
-dropArea
-    .on('hover', logEvent).on('drop', logEvent);
+window.onload = function(){
+
+    document.body.appendChild(elm);
+
+};
