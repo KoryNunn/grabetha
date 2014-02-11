@@ -28,9 +28,9 @@ function emitDroppableEvent(event, grabbable, position){
         }
 
         for(var j = 0; j < targets.length; j++) {
-            if(checkElementLocation(targets[i], position)){
+            if(checkElementLocation(targets[j], position)){
                 droppable._emit(event, {
-                    target: targets[i],
+                    target: targets[j],
                     grabbable: grabbable,
                     position: position
                 });
@@ -53,19 +53,22 @@ function Grab(grabbable, target, interaction){
     var targetRects = target.getBoundingClientRect();
     this.target = target;
     this.grabbable = grabbable;
+    this.interaction = interaction;
 
     this.targetOffset = {
-        x: targetRects.left - interaction.pageX,
-        y: targetRects.top - interaction.pageY
+        x: targetRects.left - (interaction.pageX - window.scrollX),
+        y: targetRects.top - (interaction.pageY - window.scrollY)
     }
+
+    console.log(this.targetOffset);
 
     this._position = {
         x:0,
         y:0
     };
     this.position({
-        x: interaction.pageX,
-        y: interaction.pageY
+        x: interaction.pageX - window.scrollX,
+        y: interaction.pageY - window.scrollY
     });
 }
 Grab.prototype = Object.create(EventEmitter.prototype);
@@ -80,8 +83,8 @@ Grab.prototype.position = getterSetter(
     function(position){
         this._position.x = position.x;
         this._position.y = position.y;
-        this.emit('move', this.position());
         emitDroppableEvent('hover', this.grabbable, this.position());
+        this.emit('move', this.position());
     }
 );
 
@@ -112,11 +115,14 @@ Grabbable.prototype.init = function(){
 };
 Grabbable.prototype._start = function(interaction){
     var grabbable = this,
-        target = interaction.target;
+        target = doc(interaction.target).closest(grabbable.selector);
 
-    if(!doc(target).is(grabbable.selector)){
+    if(!target){
         return;
     }
+
+    interaction.stopPropagation();
+    interaction.preventDefault();
 
     this.target = target;
     this.currentGrab = new Grab(this, target, interaction);
@@ -136,6 +142,7 @@ Grabbable.prototype._drag = function(interaction){
         this.grabStarted = true;
     }
 
+    interaction.stopPropagation();
     interaction.preventDefault();
 
     var moveDelta = interaction.getMoveDelta(),
@@ -157,8 +164,8 @@ Grabbable.prototype._end = function(interaction){
     }
 
     if(this.grabStarted){
-        this.emit('drop', this.currentGrab.position());
         emitDroppableEvent('drop', this, this.currentGrab.position());
+        this.emit('drop', this.currentGrab.position());
     }
 
     delete this.target;
@@ -180,7 +187,7 @@ Grabbable.prototype.createGhost = function(element){
     ghost.style.left = '0';
 
     grab.on('move', function(position){
-        ghost.style[venfix('transform')] = 'translate3d(' + (grab.targetOffset.x + position.x) + 'px,' + (grab.targetOffset.y + position.y) + 'px,0)'
+        ghost.style[venfix('transform')] = 'translate3d(' + (grab.targetOffset.x + position.x + window.scrollX) + 'px,' + (grab.targetOffset.y + position.y + window.scrollY) + 'px,0)'
     });
 
     ghost.destroy = function(){
