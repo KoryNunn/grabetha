@@ -1,12 +1,13 @@
 var EventEmitter = require('events').EventEmitter,
     doc = require('doc-js'),
+    predator = require('predator'),
     venfix = require('venfix'),
     interact = require('interact-js');
 
 var droppables = [];
 
 function checkElementLocation(element, position){
-    var boundingRect = element.getBoundingClientRect();
+    var boundingRect = predator(element);
 
     return boundingRect.left < position.x && boundingRect.left + boundingRect.width > position.x &&
         boundingRect.top < position.y && boundingRect.top + boundingRect.height > position.y;
