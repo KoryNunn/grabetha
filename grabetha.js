@@ -4,7 +4,8 @@ var EventEmitter = require('events').EventEmitter,
     venfix = require('venfix'),
     interact = require('interact-js');
 
-var droppables = [];
+// grabitha needs to share droppables between instances.
+var droppables = window._grabithaDroppables = window._grabithaDroppables || [];
 
 function checkElementLocation(element, position){
     var boundingRect = predator(element);
@@ -247,7 +248,5 @@ function droppable(delegate, selector){
     return instance;
 }
 
-module.exports = {
-    grabbable: grabbable,
-    droppable: droppable
-};
+module.exports.grabbable = grabbable;
+module.exports.droppable = droppable;
