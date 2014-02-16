@@ -8,12 +8,9 @@
   },
   "author": "",
   "license": "BSD",
-  "devDependencies": {
-    "watchify": "~0.5.4"
-  },
   "dependencies": {
-    "doc-js": "~0.4.2",
-    "interact-js": "~0.4.5",
+    "doc-js": "0.4.x",
+    "interact-js": "0.4.x",
     "venfix": "0.0.2",
     "predator": "0.0.5"
   }
