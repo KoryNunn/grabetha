@@ -13,13 +13,13 @@ Usage:
 
 Require grabetha:
 
-  var grabetha = require('./grabetha');
+    var grabetha = require('./grabetha');
 
 Create a grabbable set:
 
 ### grabetha.grabbable(element or selector)
 
-  var grabbableStuff = grabetha.grabbable('.things .stuff');
+    var grabbableStuff = grabetha.grabbable('.things .stuff');
 
 Assign handlers to the set:
 
