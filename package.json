@@ -13,5 +13,13 @@
     "interact-js": "0.4.x",
     "venfix": "0.0.2",
     "predator": "0.0.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/KoryNunn/grabetha.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KoryNunn/grabetha/issues"
+  },
+  "homepage": "https://github.com/KoryNunn/grabetha"
 }
