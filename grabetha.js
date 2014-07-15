@@ -4,8 +4,8 @@ var EventEmitter = require('events').EventEmitter,
     venfix = require('venfix'),
     interact = require('interact-js');
 
-// grabitha needs to share droppables between instances.
-var droppables = window._grabithaDroppables = window._grabithaDroppables || [];
+// grabetha needs to share droppables between instances.
+var droppables = window._grabethaDroppables = window._grabethaDroppables || [];
 
 function checkElementLocation(element, position){
     var boundingRect = predator(element);
@@ -113,6 +113,10 @@ Grabbable.prototype.init = function(){
     interact.on('cancel', this.delegate, this._end.bind(this));
 };
 Grabbable.prototype._drag = function(interaction){
+    if(interaction._grabethaInvalid){
+        return;
+    }
+
     var grabbable = this,
         target = this.target;
 
@@ -120,6 +124,7 @@ Grabbable.prototype._drag = function(interaction){
         target = this.target = doc(interaction.target).closest(grabbable.selector);
 
         if(!target){
+            interaction._grabethaInvalid = true;
             return;
         }
 
@@ -143,6 +148,8 @@ Grabbable.prototype._drag = function(interaction){
 Grabbable.prototype._end = function(interaction){
     var grabbable = this,
         target = this.target;
+
+    delete interaction._grabethaInvalid;
 
     if(!target){
         return;
