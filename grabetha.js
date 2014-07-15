@@ -113,7 +113,7 @@ Grabbable.prototype.init = function(){
     interact.on('cancel', this.delegate, this._end.bind(this));
 };
 Grabbable.prototype._drag = function(interaction){
-    if(interaction._grabethaInvalid){
+    if(this._grabethaInvalid){
         return;
     }
 
@@ -124,7 +124,7 @@ Grabbable.prototype._drag = function(interaction){
         target = this.target = doc(interaction.target).closest(grabbable.selector);
 
         if(!target){
-            interaction._grabethaInvalid = true;
+            this._grabethaInvalid = true;
             return;
         }
 
@@ -149,7 +149,7 @@ Grabbable.prototype._end = function(interaction){
     var grabbable = this,
         target = this.target;
 
-    delete interaction._grabethaInvalid;
+    delete this._grabethaInvalid;
 
     if(!target){
         return;
