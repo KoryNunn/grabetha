@@ -29,6 +29,10 @@ function emitDroppableEvent(event, grabbable, position){
             }
         }
 
+        if(!targets){
+            return;
+        }
+
         for(var j = 0; j < targets.length; j++) {
             if(checkElementLocation(targets[j], position)){
                 droppable._emit(event, {
