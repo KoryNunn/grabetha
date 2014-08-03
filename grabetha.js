@@ -30,7 +30,7 @@ function emitDroppableEvent(event, grabbable, position){
         }
 
         if(!targets){
-            return;
+            continue;
         }
 
         for(var j = 0; j < targets.length; j++) {
