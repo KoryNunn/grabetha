@@ -2,7 +2,8 @@ var EventEmitter = require('events').EventEmitter,
     doc = require('doc-js'),
     predator = require('predator'),
     venfix = require('venfix'),
-    interact = require('interact-js');
+    interact = require('interact-js'),
+    translate = require('css-translate');
 
 // grabetha needs to share droppables between instances.
 var droppables = window._grabethaDroppables = window._grabethaDroppables || [];
@@ -22,11 +23,9 @@ function emitDroppableEvent(event, grabbable, position){
         targets;
 
         if(typeof droppable.selector === 'string'){
-            targets = doc(droppable.delegate).find(droppable.selector);
+            targets = doc(droppable.selector);
         }else{
-            if(doc(droppable.selector).closest(droppable.delegate)){
-                targets = [droppable.selector];
-            }
+            targets = [droppable.selector];
         }
 
         if(!targets){
@@ -92,13 +91,61 @@ Grab.prototype.position = getterSetter(
     }
 );
 
-function Grabbable(delegate, selector){
-    if(arguments.length < 2){
-        selector = delegate;
-        delegate = document;
+var inited,
+    grabbables = [];
+
+function initEvents(grabbable){
+    grabbables.push(grabbable);
+
+    if(inited){
+        return;
+    }
+    inited = true;
+
+    function dragHandler(interaction){
+        if(interaction._noGrabs){
+            return;
+        }
+        if(interaction._grabHandler){
+            interaction._grabHandler._drag(interaction);
+            return;
+        }
+
+        var handlers = [];
+
+        for(var i = 0; i < grabbables.length && !interaction._grabHandler; i++){
+            var handler = grabbables[i]._getGrabTarget(interaction);
+            if(handler){
+                handlers.push(handler);
+            }
+        }
+
+        var handler = handlers.sort(function(handler1, handler2){
+            return doc(handler1.target).closest(handler2.target) ? 1 : -1;
+        }).pop();
+
+        if(!handler){
+            interaction._noGrabs = true;
+            return;
+        }
+
+        interaction._grabHandler = handler;
+        handler.currentGrab = new Grab(handler, handler.target, interaction);
+        handler.emit('grab', handler.currentGrab);
+    }
+    function endHandler(interaction){
+        if(interaction._grabHandler){
+            interaction._grabHandler._end(interaction);
+        }
+        interaction._noGrabs = false;
     }
 
-    this.delegate = delegate;
+    interact.on('drag', document, dragHandler);
+    interact.on('end', document, endHandler);
+    interact.on('cancel', document, endHandler);    
+}
+
+function Grabbable(selector){
     this.selector = selector;
 
     doc.ready(this.init.bind(this));
@@ -106,35 +153,20 @@ function Grabbable(delegate, selector){
 Grabbable.prototype = Object.create(EventEmitter.prototype);
 Grabbable.prototype.constructor = Grabbable;
 Grabbable.prototype.init = function(){
-    this.delegate = doc(this.delegate)[0];
+    initEvents(this);
+};
+Grabbable.prototype._getGrabTarget = function(interaction){
+    this.target = doc(interaction.target).closest(this.selector);
 
-    if(!this.delegate){
+    if(!this.target){
         return;
     }
 
-    interact.on('drag', this.delegate, this._drag.bind(this));
-    interact.on('end', this.delegate, this._end.bind(this));
-    interact.on('cancel', this.delegate, this._end.bind(this));
+    return this;
 };
 Grabbable.prototype._drag = function(interaction){
-    if(this._grabethaInvalid){
-        return;
-    }
-
     var grabbable = this,
         target = this.target;
-
-    if(!target){
-        target = this.target = doc(interaction.target).closest(grabbable.selector);
-
-        if(!target){
-            this._grabethaInvalid = true;
-            return;
-        }
-
-        this.currentGrab = new Grab(this, target, interaction);
-        this.emit('grab', this.currentGrab);
-    }
 
     interaction.stopPropagation();
     interaction.preventDefault();
@@ -166,7 +198,7 @@ Grabbable.prototype._end = function(interaction){
     delete this.currentGrab;
 
     return this;
-}
+};
 Grabbable.prototype.createGhost = function(element){
     element = element || this.target;
     var ghost = element.cloneNode(true),
@@ -174,13 +206,13 @@ Grabbable.prototype.createGhost = function(element){
 
     ghost.style.cssText = document.defaultView.getComputedStyle(element, '').cssText;
 
-    ghost.style.position = 'absolute';
+    ghost.style.position = 'fixed';
     ghost.style.opacity = '0.5';
     ghost.style.top = '0';
     ghost.style.left = '0';
 
     grab.on('move', function(position){
-        ghost.style[venfix('transform')] = 'translate3d(' + (grab.targetOffset.x + position.x + window.scrollX) + 'px,' + (grab.targetOffset.y + position.y + window.scrollY) + 'px,0)'
+        ghost.style[venfix('transform')] = translate('3d',  grab.targetOffset.x + position.x + window.scrollX, grab.targetOffset.y + position.y + window.scrollY, 0);
     });
 
     ghost.destroy = function(){
@@ -190,9 +222,14 @@ Grabbable.prototype.createGhost = function(element){
     document.body.appendChild(ghost);
 
     return ghost;
-}
+};
+Grabbable.prototype.destroy = function(){
+    var grabbableIndex = grabbables.indexOf(this);
 
-function grabbable(delegate, selector){
+    grabbables.splice(grabbableIndex, 1);
+};
+
+function grabbable(selector){
     var instance = Object.create(Grabbable.prototype);
     Grabbable.apply(instance, arguments);
 
@@ -200,15 +237,9 @@ function grabbable(delegate, selector){
 }
 
 
-function Droppable(delegate, selector){
+function Droppable(selector){
     droppables.push(this);
 
-    if(arguments.length < 2){
-        selector = delegate;
-        delegate = document;
-    }
-
-    this.delegate = delegate;
     this.selector = selector;
 
     doc.ready(this.init.bind(this));
@@ -216,11 +247,7 @@ function Droppable(delegate, selector){
 Droppable.prototype = Object.create(EventEmitter.prototype);
 Droppable.prototype.constructor = Droppable;
 Droppable.prototype.init = function(){
-    this.delegate = doc(this.delegate)[0];
 
-    if(!this.delegate){
-        return;
-    }
 };
 Droppable.prototype.destroy = function(){
     var dropableIndex = droppables.indexOf(this);
@@ -228,11 +255,10 @@ Droppable.prototype.destroy = function(){
     droppables.splice(dropableIndex, 1);
 };
 Droppable.prototype._emit = function(event, details){
-
     this.emit(event, details);
 };
 
-function droppable(delegate, selector){
+function droppable(selector){
     var instance = Object.create(Droppable.prototype);
     Droppable.apply(instance, arguments);
 

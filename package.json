@@ -4,15 +4,17 @@
   "description": "grabetha ========",
   "main": "grabetha.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch":"watchify ./test.js -o ./build/test.js"
   },
   "author": "",
   "license": "BSD",
   "dependencies": {
-    "doc-js": "0.4.x",
-    "interact-js": "0.4.x",
-    "venfix": "0.0.2",
-    "predator": "0.0.5"
+    "css-translate": "^1.0.0",
+    "doc-js": "^1.0.0",
+    "interact-js": "^2.0.0",
+    "predator": "^1.0.1",
+    "venfix": "^1.1.5"
   },
   "repository": {
     "type": "git",
