@@ -4,7 +4,8 @@ var EventEmitter = require('events').EventEmitter,
     predator = require('predator'),
     venfix = require('venfix'),
     interact = require('interact-js'),
-    translate = require('css-translate');
+    translate = require('css-translate'),
+    cloneWithStyles = require('clone-with-styles');
 
 // grabetha needs to share droppables between instances.
 var droppables = window._grabethaDroppables = window._grabethaDroppables || [];
@@ -202,10 +203,8 @@ Grabbable.prototype._end = function(interaction){
 };
 Grabbable.prototype.createGhost = function(element){
     element = element || this.target;
-    var ghost = element.cloneNode(true),
+    var ghost = cloneWithStyles(element),
         grab = this.currentGrab;
-
-    ghost.style.cssText = document.defaultView.getComputedStyle(element, '').cssText;
 
     ghost.style.position = 'fixed';
     ghost.style.opacity = '0.5';
@@ -268,7 +267,32 @@ function droppable(selector){
 
 module.exports.grabbable = grabbable;
 module.exports.droppable = droppable;
-},{"css-translate":"/home/kory/dev/grabetha/node_modules/css-translate/translate.js","doc-js":"/home/kory/dev/grabetha/node_modules/doc-js/fluent.js","events":"/usr/lib/node_modules/watchify/node_modules/browserify/node_modules/events/events.js","interact-js":"/home/kory/dev/grabetha/node_modules/interact-js/interact.js","predator":"/home/kory/dev/grabetha/node_modules/predator/predator.js","venfix":"/home/kory/dev/grabetha/node_modules/venfix/venfix.js"}],"/home/kory/dev/grabetha/node_modules/css-translate/node_modules/unitr/unitr.js":[function(require,module,exports){
+},{"clone-with-styles":"/home/kory/dev/grabetha/node_modules/clone-with-styles/index.js","css-translate":"/home/kory/dev/grabetha/node_modules/css-translate/translate.js","doc-js":"/home/kory/dev/grabetha/node_modules/doc-js/fluent.js","events":"/usr/lib/node_modules/watchify/node_modules/browserify/node_modules/events/events.js","interact-js":"/home/kory/dev/grabetha/node_modules/interact-js/interact.js","predator":"/home/kory/dev/grabetha/node_modules/predator/predator.js","venfix":"/home/kory/dev/grabetha/node_modules/venfix/venfix.js"}],"/home/kory/dev/grabetha/node_modules/clone-with-styles/index.js":[function(require,module,exports){
+function copyStyles(fromElement, toElement){
+    var computed = document.defaultView.getComputedStyle(fromElement, '');
+
+    for(var key in computed){
+        toElement.style[key] = computed[key];
+    }
+}
+
+function cloneStyles(fromElement, toElement){
+    for (var i = 0; i < fromElement.children.length; i++) {
+        cloneStyles(fromElement.children[i], toElement.children[i]);
+    }
+    copyStyles(fromElement, toElement);    
+}
+
+function clone(fromElement){
+    var clone = fromElement.cloneNode(true);
+
+    cloneStyles(fromElement, clone);
+
+    return clone;
+}
+
+module.exports = clone;
+},{}],"/home/kory/dev/grabetha/node_modules/css-translate/node_modules/unitr/unitr.js":[function(require,module,exports){
 var parseRegex = /^(-?(?:\d+|\d+\.\d+|\.\d+))([^\.]*?)$/;
 
 function parse(input){

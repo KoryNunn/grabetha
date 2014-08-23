@@ -10,6 +10,7 @@
   "author": "",
   "license": "BSD",
   "dependencies": {
+    "clone-with-styles": "^2.0.0",
     "css-translate": "^1.0.0",
     "doc-js": "^1.0.0",
     "interact-js": "^2.0.0",

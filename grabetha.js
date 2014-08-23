@@ -3,7 +3,8 @@ var EventEmitter = require('events').EventEmitter,
     predator = require('predator'),
     venfix = require('venfix'),
     interact = require('interact-js'),
-    translate = require('css-translate');
+    translate = require('css-translate'),
+    cloneWithStyles = require('clone-with-styles');
 
 // grabetha needs to share droppables between instances.
 var droppables = window._grabethaDroppables = window._grabethaDroppables || [];
@@ -201,10 +202,8 @@ Grabbable.prototype._end = function(interaction){
 };
 Grabbable.prototype.createGhost = function(element){
     element = element || this.target;
-    var ghost = element.cloneNode(true),
+    var ghost = cloneWithStyles(element),
         grab = this.currentGrab;
-
-    ghost.style.cssText = document.defaultView.getComputedStyle(element, '').cssText;
 
     ghost.style.position = 'fixed';
     ghost.style.opacity = '0.5';
