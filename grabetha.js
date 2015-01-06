@@ -4,10 +4,13 @@ var EventEmitter = require('events').EventEmitter,
     venfix = require('venfix'),
     interact = require('interact-js'),
     translate = require('css-translate'),
-    cloneWithStyles = require('clone-with-styles');
+    cloneWithStyles = require('clone-with-styles'),
+    droppables = [];
 
 // grabetha needs to share droppables between instances.
-var droppables = window._grabethaDroppables = window._grabethaDroppables || [];
+if(typeof window !== 'undefined'){
+    droppables = window._grabethaDroppables = window._grabethaDroppables || droppables;
+}
 
 function checkElementLocation(element, position){
     var boundingRect = predator(element);
