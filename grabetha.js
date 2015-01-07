@@ -212,6 +212,11 @@ Grabbable.prototype.createGhost = function(element){
     ghost.style.opacity = '0.5';
     ghost.style.top = '0';
     ghost.style.left = '0';
+    ghost.style.transform = null;
+    ghost.style['-webkit-transform'] = null;
+    ghost.style['-moz-transform'] = null;
+    ghost.style['-ms-transform'] = null;
+    ghost.style['-o-transform'] = null;
 
     grab.on('move', function(position){
         ghost.style[venfix('transform')] = translate('3d',  grab.targetOffset.x + position.x + window.scrollX, grab.targetOffset.y + position.y + window.scrollY, 0);
