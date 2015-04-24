@@ -146,7 +146,7 @@ function initEvents(grabbable){
 
     interact.on('drag', document, dragHandler);
     interact.on('end', document, endHandler);
-    interact.on('cancel', document, endHandler);    
+    interact.on('cancel', document, endHandler);
 }
 
 function Grabbable(selector){
@@ -203,9 +203,10 @@ Grabbable.prototype._end = function(interaction){
 
     return this;
 };
-Grabbable.prototype.createGhost = function(element){
+Grabbable.prototype.createGhost = function(element, options){
     element = element || this.target;
-    var ghost = cloneWithStyles(element),
+    options = options || {};
+    var ghost = options.cloneStyles === false ? element.cloneNode(true) : cloneWithStyles(element),
         grab = this.currentGrab;
 
     ghost.style.position = 'fixed';
@@ -219,14 +220,17 @@ Grabbable.prototype.createGhost = function(element){
     ghost.style['-o-transform'] = null;
 
     grab.on('move', function(position){
-        ghost.style[venfix('transform')] = translate('3d',  grab.targetOffset.x + position.x + window.scrollX, grab.targetOffset.y + position.y + window.scrollY, 0);
+        var left = options.lockX ? 0 : grab.targetOffset.x + position.x + window.scrollX;
+        var top = options.lockY ? 0 : grab.targetOffset.y + position.y + window.scrollY;
+
+        ghost.style[venfix('transform')] = translate('3d',left ,top , 0);
     });
 
     ghost.destroy = function(){
         ghost.parentNode.removeChild(ghost);
     };
 
-    document.body.appendChild(ghost);
+    (options.insertInto || document.body).appendChild(ghost);
 
     return ghost;
 };
