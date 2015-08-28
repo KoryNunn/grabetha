@@ -24,7 +24,6 @@ function emitDroppableEvent(event, grabbable, position){
         targets;
     for(var i = 0; i < droppables.length; i++) {
         droppable = droppables[i];
-        targets;
 
         if(typeof droppable.selector === 'string'){
             targets = doc(droppable.selector);
@@ -67,7 +66,7 @@ function Grab(grabbable, target, interaction){
     this.targetOffset = {
         x: targetRects.left - (interaction.pageX - window.scrollX),
         y: targetRects.top - (interaction.pageY - window.scrollY)
-    }
+    };
 
     this._position = {
         x:0,
