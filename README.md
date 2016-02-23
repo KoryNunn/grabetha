@@ -83,9 +83,3 @@ dropArea.on('hover', function(event){
     console.log(event);
 });
 ```
-
-Initialise the sets
-```javascript
-grabbableStuff.init();
-dropArea.init();
-```
